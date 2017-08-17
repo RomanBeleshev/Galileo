@@ -24,3 +24,4 @@ private:
 	class ElementsIterator;
 };
 
+void DecomposePath(std::wstring const& path, std::wstring& parent, std::wstring& name);

@@ -54,6 +54,7 @@
     <ResourceCompile Include="GalileoFilter.rc" />
     <ClCompile Include="CommunicationPort.cpp" />
     <ClCompile Include="Error.cpp" />
+    <ClCompile Include="FastMutex.cpp" />
     <ClCompile Include="GalileoCallbacks.cpp" />
     <ClCompile Include="FilterInfrastructure.c" />
     <Inf Include="GalileoFilter.inf" />
@@ -347,7 +348,9 @@
   <ItemGroup>
     <ClInclude Include="CommunicationPort.h" />
     <ClInclude Include="Error.h" />
+    <ClInclude Include="FastMutex.h" />
     <ClInclude Include="GalileoCallbacks.h" />
+    <ClInclude Include="HighResolutionClock.h" />
     <ClInclude Include="InplaceConstructible.h" />
     <ClInclude Include="Trace.h" />
   </ItemGroup>

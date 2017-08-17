@@ -9,6 +9,7 @@ typedef LONG NTSTATUS;
 #define STATUS_BUFFER_TOO_SMALL          ((NTSTATUS)0xC0000023L)
 #define STATUS_NO_MORE_FILES             ((NTSTATUS)0x80000006L)
 #define STATUS_NOT_FOUND				 ((NTSTATUS)0xC0000225L)
+#define STATUS_OBJECT_NAME_EXISTS        ((NTSTATUS)0x40000000L)
 
 //
 // Define the major function codes for IRPs.
@@ -59,6 +60,52 @@ typedef LONG NTSTATUS;
 #define SL_RESTART_SCAN                 0x01
 #define SL_RETURN_SINGLE_ENTRY          0x02
 #define SL_INDEX_SPECIFIED              0x04
+
+//
+// Define the create disposition values
+//
+
+#define FILE_SUPERSEDE                  0x00000000
+#define FILE_OPEN                       0x00000001
+#define FILE_CREATE                     0x00000002
+#define FILE_OPEN_IF                    0x00000003
+#define FILE_OVERWRITE                  0x00000004
+#define FILE_OVERWRITE_IF               0x00000005
+
+//
+// Define the I/O status information return values for NtCreateFile/NtOpenFile
+//
+
+#define FILE_SUPERSEDED                 0x00000000
+#define FILE_OPENED                     0x00000001
+#define FILE_CREATED                    0x00000002
+#define FILE_OVERWRITTEN                0x00000003
+#define FILE_EXISTS                     0x00000004
+#define FILE_DOES_NOT_EXIST             0x00000005
+
+//
+// Define the create/open option flags
+//
+
+#define FILE_DIRECTORY_FILE                     0x00000001
+#define FILE_WRITE_THROUGH                      0x00000002
+#define FILE_SEQUENTIAL_ONLY                    0x00000004
+#define FILE_NO_INTERMEDIATE_BUFFERING          0x00000008
+
+#define FILE_SYNCHRONOUS_IO_ALERT               0x00000010
+#define FILE_SYNCHRONOUS_IO_NONALERT            0x00000020
+#define FILE_NON_DIRECTORY_FILE                 0x00000040
+#define FILE_CREATE_TREE_CONNECTION             0x00000080
+
+#define FILE_COMPLETE_IF_OPLOCKED               0x00000100
+#define FILE_NO_EA_KNOWLEDGE                    0x00000200
+#define FILE_OPEN_REMOTE_INSTANCE               0x00000400
+#define FILE_RANDOM_ACCESS                      0x00000800
+
+#define FILE_DELETE_ON_CLOSE                    0x00001000
+#define FILE_OPEN_BY_FILE_ID                    0x00002000
+#define FILE_OPEN_FOR_BACKUP_INTENT             0x00004000
+#define FILE_NO_COMPRESSION                     0x00008000
 
 enum FLT_PREOP_CALLBACK_STATUS
 {
@@ -200,3 +247,57 @@ typedef struct _FILE_ID_BOTH_DIR_INFORMATION
 	LARGE_INTEGER FileId;
 	WCHAR FileName[1];
 } FILE_ID_BOTH_DIR_INFORMATION, *PFILE_ID_BOTH_DIR_INFORMATION;
+
+typedef struct _FILE_BOTH_DIR_INFORMATION {
+	ULONG NextEntryOffset;
+	ULONG FileIndex;
+	LARGE_INTEGER CreationTime;
+	LARGE_INTEGER LastAccessTime;
+	LARGE_INTEGER LastWriteTime;
+	LARGE_INTEGER ChangeTime;
+	LARGE_INTEGER EndOfFile;
+	LARGE_INTEGER AllocationSize;
+	ULONG FileAttributes;
+	ULONG FileNameLength;
+	ULONG EaSize;
+	CCHAR ShortNameLength;
+	WCHAR ShortName[12];
+	WCHAR FileName[1];
+} FILE_BOTH_DIR_INFORMATION, *PFILE_BOTH_DIR_INFORMATION;
+
+typedef struct _FILE_BASIC_INFORMATION {
+	LARGE_INTEGER CreationTime;
+	LARGE_INTEGER LastAccessTime;
+	LARGE_INTEGER LastWriteTime;
+	LARGE_INTEGER ChangeTime;
+	ULONG FileAttributes;
+} FILE_BASIC_INFORMATION, *PFILE_BASIC_INFORMATION;
+
+typedef struct _FILE_NETWORK_OPEN_INFORMATION {
+	LARGE_INTEGER CreationTime;
+	LARGE_INTEGER LastAccessTime;
+	LARGE_INTEGER LastWriteTime;
+	LARGE_INTEGER ChangeTime;
+	LARGE_INTEGER AllocationSize;
+	LARGE_INTEGER EndOfFile;
+	ULONG FileAttributes;
+} FILE_NETWORK_OPEN_INFORMATION, *PFILE_NETWORK_OPEN_INFORMATION;
+
+typedef struct _FILE_STANDARD_INFORMATION {
+	LARGE_INTEGER AllocationSize;
+	LARGE_INTEGER EndOfFile;
+	ULONG NumberOfLinks;
+	BOOLEAN DeletePending;
+	BOOLEAN Directory;
+} FILE_STANDARD_INFORMATION, *PFILE_STANDARD_INFORMATION;
+
+typedef struct _FILE_ATTRIBUTE_TAG_INFORMATION {
+	ULONG FileAttributes;
+	ULONG ReparseTag;
+} FILE_ATTRIBUTE_TAG_INFORMATION, *PFILE_ATTRIBUTE_TAG_INFORMATION;
+
+typedef struct _FILE_NAME_INFORMATION {
+	ULONG FileNameLength;
+	WCHAR FileName[1];
+} FILE_NAME_INFORMATION, *PFILE_NAME_INFORMATION;
+

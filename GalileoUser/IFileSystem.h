@@ -7,7 +7,7 @@
 
 struct FileInfo
 {
-	FileInfo(bool directory, PCWCHAR name, ULONG size, FILETIME time) :
+	FileInfo(bool directory, std::wstring const& name, ULONG size, FILETIME time) :
 		Directory(directory),
 		Name(name),
 		Size(size),

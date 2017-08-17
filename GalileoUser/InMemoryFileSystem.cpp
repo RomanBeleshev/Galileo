@@ -110,7 +110,7 @@ void DecomposePath(std::wstring const& path, std::wstring& parent, std::wstring&
 	}
 
 	parent = path.substr(0, slashPosition);
-	name = path.substr(slashPosition);
+	name = path.substr(slashPosition + 1);
 }
 
 void InMemoryFileSystem::CreateNewElement(PCWCHAR parentPath, FileInfo const& info)

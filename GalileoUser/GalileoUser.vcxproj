@@ -97,6 +97,9 @@
       <AdditionalLibraryDirectories>$(OutDir)</AdditionalLibraryDirectories>
       <OutputFile>$(OutDir)$(TargetName)$(TargetExt)</OutputFile>
       <ProgramDatabaseFile>$(SolutionDir)\Build\$(Configuration)\$(ProjectName)\$(TargetName).pdb</ProgramDatabaseFile>
+      <UACExecutionLevel>HighestAvailable</UACExecutionLevel>
+      <EnableUAC>true</EnableUAC>
+      <UACUIAccess>false</UACUIAccess>
     </Link>
   </ItemDefinitionGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">
@@ -115,6 +118,9 @@
       <AdditionalLibraryDirectories>$(OutDir)</AdditionalLibraryDirectories>
       <OutputFile>$(OutDir)$(TargetName)$(TargetExt)</OutputFile>
       <ProgramDatabaseFile>$(SolutionDir)\Build\$(Configuration)\$(ProjectName)\$(TargetName).pdb</ProgramDatabaseFile>
+      <UACExecutionLevel>HighestAvailable</UACExecutionLevel>
+      <EnableUAC>true</EnableUAC>
+      <UACUIAccess>false</UACUIAccess>
     </Link>
   </ItemDefinitionGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">
@@ -137,6 +143,9 @@
       <AdditionalLibraryDirectories>$(OutDir)</AdditionalLibraryDirectories>
       <OutputFile>$(OutDir)$(TargetName)$(TargetExt)</OutputFile>
       <ProgramDatabaseFile>$(SolutionDir)\Build\$(Configuration)\$(ProjectName)\$(TargetName).pdb</ProgramDatabaseFile>
+      <UACExecutionLevel>HighestAvailable</UACExecutionLevel>
+      <EnableUAC>true</EnableUAC>
+      <UACUIAccess>false</UACUIAccess>
     </Link>
   </ItemDefinitionGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Release|x64'">
@@ -159,6 +168,9 @@
       <AdditionalLibraryDirectories>$(OutDir)</AdditionalLibraryDirectories>
       <OutputFile>$(OutDir)$(TargetName)$(TargetExt)</OutputFile>
       <ProgramDatabaseFile>$(SolutionDir)\Build\$(Configuration)\$(ProjectName)\$(TargetName).pdb</ProgramDatabaseFile>
+      <UACExecutionLevel>HighestAvailable</UACExecutionLevel>
+      <EnableUAC>true</EnableUAC>
+      <UACUIAccess>false</UACUIAccess>
     </Link>
   </ItemDefinitionGroup>
   <ItemGroup>

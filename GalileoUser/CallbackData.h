@@ -2,6 +2,8 @@
 
 typedef struct _FLT_IO_PARAMETER_BLOCK FLT_IO_PARAMETER_BLOCK;
 
+#include <string>
+
 class CallbackData
 {
 public:
@@ -12,7 +14,10 @@ public:
 	int MinorCode() const;
 	int OperationFlags() const;
 	int InformationClass() const;
-	wchar_t const* FileName() const;
+	int FileInformationClass() const;
+	int Disposition() const;
+	int CreateOptions() const;
+	std::wstring const& FileName() const;
 
 	void const* InputBuffer() const;
 	int InputBufferLength() const;
@@ -25,5 +30,6 @@ private:
 private:
 	FLT_IO_PARAMETER_BLOCK const* m_ioParams;
 	ExtraParams const* m_extraParams;
-	wchar_t const* m_fileName;
+	wchar_t const* m_fileNameBuffer;
+	std::wstring m_fileName;
 };

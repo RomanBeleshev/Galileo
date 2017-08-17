@@ -128,48 +128,6 @@ void CommunicationPort::UserMessage()
 	PT_DBG_PRINT(PTDBG_TRACE_GALILEO, ("GalileoFilter!UserMessage\n"));
 }
 
-class HighResolutionClock
-{
-public:
-	HighResolutionClock() :
-		m_startClock(GetClock())
-	{
-	}
-
-	static LONGLONG GetFrequency()
-	{
-		static LONGLONG frequency = GetFrequencyOnce();
-		return frequency;
-	}
-
-	LONGLONG TicksElapsed() const
-	{
-		return GetClock() - m_startClock;
-	}
-
-	LONGLONG MicroElapsed() const
-	{
-		return (GetClock() - m_startClock) * 1000 * 1000 / GetFrequency();
-	}
-
-private:
-	static LONGLONG GetFrequencyOnce()
-	{
-		LARGE_INTEGER frequency;
-		::KeQueryPerformanceCounter(&frequency);
-		PT_DBG_PRINT(PTDBG_TRACE_GALILEO, ("GalileoFilter!GetFrequency %08x.\n", frequency.QuadPart));
-		return frequency.QuadPart;
-	}
-
-	static LONGLONG GetClock()
-	{
-		return ::KeQueryPerformanceCounter(NULL).QuadPart;
-	}
-
-private:
-	LONGLONG m_startClock;
-};
-
 bool CommunicationPort::SendMessage(PVOID CONST iBuffer, ULONG iSize, PVOID oBuffer, ULONG& oSize)
 {
 	if (m_clientPort == nullptr)
@@ -181,17 +139,14 @@ bool CommunicationPort::SendMessage(PVOID CONST iBuffer, ULONG iSize, PVOID oBuf
 	LARGE_INTEGER timeout;
 	timeout.QuadPart = -10 * 10000;
 
-	HighResolutionClock clock;
 	NTSTATUS result = ::FltSendMessage(m_filter, &m_clientPort, iBuffer, iSize, oBuffer, &oSize, NULL/*&timeout*/);
 	if (result == STATUS_TIMEOUT)
 	{
-		PT_DBG_PRINT(PTDBG_TRACE_GALILEO, ("GalileoFilter SendMessage timed out (%lld).\n", clock.MicroElapsed()));
+		PT_DBG_PRINT(PTDBG_TRACE_GALILEO, ("GalileoFilter!SendMessage timed out.\n"));
 		return false;
 	}
 	else if (ApiCallSucceeded(result, L"CreateCommunicationPort"))
 	{
-		LONGLONG ticks1 = clock.TicksElapsed();
-		PT_DBG_PRINT(PTDBG_TRACE_GALILEO, ("GalileoFilter SendMessage succeeded (%lld).\n", ticks1));
 	}
 
 	return true;

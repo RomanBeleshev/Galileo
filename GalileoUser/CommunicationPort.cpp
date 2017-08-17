@@ -34,7 +34,7 @@ void CommunicationPort::ReplyMessage(PVOID buffer, DWORD size)
 	PFILTER_REPLY_HEADER header = static_cast<PFILTER_REPLY_HEADER>(buffer);
 	header->Status = 0;
 	header->MessageId = m_lastMessageId;
-	HandleExplicitError(::FilterReplyMessage(m_port, header, size));
+	HandleExplicitError(::FilterReplyMessage(m_port, header, size + sizeof(FILTER_REPLY_HEADER)));
 }
 
 char const* CommunicationPort::GetMessageBody(PVOID buffer)

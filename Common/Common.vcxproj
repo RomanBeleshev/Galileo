@@ -159,9 +159,6 @@
     </Lib>
   </ItemDefinitionGroup>
   <ItemGroup>
-    <Text Include="ReadMe.txt" />
-  </ItemGroup>
-  <ItemGroup>
     <ClInclude Include="Exception.h" />
     <ClInclude Include="PrivilegeManager.h" />
     <ClInclude Include="WinApi.h" />

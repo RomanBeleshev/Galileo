@@ -13,13 +13,13 @@ void FileSystemStub::PopulateFileSystem(IFileSystem& fileSystem)
 	fileSystem.CreateNewElement(L"", FileInfo(false, L"Galileo File", 1234567, time));
 
 	fileSystem.CreateNewElement(L"", FileInfo(true, L"1", 0, time));
-	/*
+
 	fileSystem.CreateNewElement(L"", FileInfo(true, L"2", 0, time));
 	fileSystem.CreateNewElement(L"\\1", FileInfo(true, L"1", 0, time));
 	fileSystem.CreateNewElement(L"\\1", FileInfo(true, L"2", 0, time));
 	fileSystem.CreateNewElement(L"", FileInfo(true, L"2", 0, time));
 
-	TestFileSystem(fileSystem);*/
+	TestFileSystem(fileSystem);
 }
 
 void Require(bool condition)
