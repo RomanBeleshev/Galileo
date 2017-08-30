@@ -46,6 +46,7 @@ typedef LONG NTSTATUS;
 #define IRP_MJ_PNP_POWER                IRP_MJ_PNP      // Obsolete....
 #define IRP_MJ_MAXIMUM_FUNCTION         0x1b
 
+
 //
 // Directory control minor function codes
 //

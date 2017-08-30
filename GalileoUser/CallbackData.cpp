@@ -4,8 +4,14 @@
 
 struct CallbackData::ExtraParams
 {
-	ULONG Param1;
+	union
+	{
+		ULONG LongParam;
+		LONGLONG LongLongParam;
+	};
+
 	ULONG OutputBufferLength;
+	PVOID FileObject;
 };
 
 template <typename ToType, typename FromType>
@@ -53,22 +59,27 @@ std::wstring const& CallbackData::FileName() const
 
 int CallbackData::InformationClass() const
 {
-	return m_extraParams->Param1;
+	return m_extraParams->LongParam;
 }
 
 int CallbackData::FileInformationClass() const
 {
-	return m_extraParams->Param1;
+	return m_extraParams->LongParam;
 }
 
 int CallbackData::Disposition() const
 {
-	return (m_extraParams->Param1 >> 24) & 0x000000ff;
+	return (m_extraParams->LongParam >> 24) & 0x000000ff;
 }
 
 int CallbackData::CreateOptions() const
 {
-	return m_extraParams->Param1;
+	return m_extraParams->LongParam;
+}
+
+std::int64_t CallbackData::Offset() const
+{
+	return m_extraParams->LongLongParam;
 }
 
 int CallbackData::OutputBufferLength() const
@@ -86,3 +97,7 @@ int CallbackData::InputBufferLength() const
 	return 0;
 }
 
+void const* CallbackData::FileObject() const
+{
+	return m_extraParams->FileObject;
+}

@@ -71,8 +71,14 @@ ULONG PtrDiff(void const* from, void const* to)
 
 struct ExtraParams
 {
-	ULONG Param1;
+	union
+	{
+		ULONG LongParam;
+		LONGLONG LongLongParam;
+	};
+
 	ULONG OutputBufferLength;
+	PFILE_OBJECT FileObject;
 };
 
 template <typename ToType, typename FromType>
@@ -104,25 +110,29 @@ FLT_PREOP_CALLBACK_STATUS SendMessage(PFLT_CALLBACK_DATA data, PFILE_OBJECT CONS
 		return FLT_PREOP_COMPLETE;
 	}
 
-	ExtraParams extraParams = { 0, length == NULL ? 0 : *length };
+	ExtraParams extraParams = { 0, length == NULL ? 0 : *length, fileObject };
 	if (data->Iopb->MajorFunction == IRP_MJ_DIRECTORY_CONTROL && data->Iopb->MinorFunction == IRP_MN_QUERY_DIRECTORY)
 	{
-		extraParams.Param1 = data->Iopb->Parameters.DirectoryControl.QueryDirectory.FileInformationClass;
+		extraParams.LongParam = data->Iopb->Parameters.DirectoryControl.QueryDirectory.FileInformationClass;
 	}
 	else if (data->Iopb->MajorFunction == IRP_MJ_CREATE)
 	{
-		extraParams.Param1 = data->Iopb->Parameters.Create.Options;
+		extraParams.LongParam = data->Iopb->Parameters.Create.Options;
 	}
 	else if (data->Iopb->MajorFunction == IRP_MJ_QUERY_INFORMATION)
 	{
-		extraParams.Param1 = data->Iopb->Parameters.QueryFileInformation.FileInformationClass;
+		extraParams.LongParam = data->Iopb->Parameters.QueryFileInformation.FileInformationClass;
+	}
+	else if (data->Iopb->MajorFunction == IRP_MJ_READ)
+	{
+		extraParams.LongLongParam = data->Iopb->Parameters.Read.ByteOffset.QuadPart;
 	}
 
 	CopyData(&extraParams, iBuffer + iSize, sizeof(ExtraParams), iSize);
 
 	PCHAR const irpName = ::FltGetIrpName(data->Iopb->MajorFunction);
-	PT_DBG_PRINT(PTDBG_TRACE_GALILEO, ("GalileoFilter!%s(Minor=%d, Param=%d, BufLen=%d, File=%wZ)\n", irpName,
-		data->Iopb->MinorFunction, extraParams.Param1, extraParams.OutputBufferLength, fileObject->FileName));
+	PT_DBG_PRINT(PTDBG_TRACE_GALILEO, ("GalileoFilter!%s(Minor=%d, Param=%d, BufLen=%d, FileObj=%p, File=%wZ)\n", irpName,
+		data->Iopb->MinorFunction, extraParams.LongParam, extraParams.OutputBufferLength, fileObject, fileObject->FileName));
 
 	UNICODE_STRING const& path = fileObject->FileName;
 	CopyData(&path.Length, iBuffer + iSize, sizeof(path.Length), iSize);

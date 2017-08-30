@@ -5,7 +5,8 @@
 #include <string>
 
 InMemoryFileSystem::InMemoryFileSystem() :
-	m_elements()
+	m_elements(),
+	m_contents()
 {
 	m_elements.insert(std::make_pair(L"\\", FileInfo()));
 }
@@ -20,6 +21,24 @@ bool InMemoryFileSystem::FindByPath(PCWCHAR path, FileInfo* info) const
 	std::wstring lowerPath(path);
 	ToLower(lowerPath);
 	return FindByLowerPath(lowerPath, info);
+}
+
+FileInfo& InMemoryFileSystem::FindByLowerPath(std::wstring const& lowerPath)
+{
+	auto it = m_elements.find(lowerPath);
+	if (it == m_elements.end())
+	{
+		throw std::runtime_error("Element not found");
+	}
+
+	return it->second;
+}
+
+FileInfo& InMemoryFileSystem::FindByPath(PCWCHAR path)
+{
+	std::wstring lowerPath(path);
+	ToLower(lowerPath);
+	return FindByLowerPath(lowerPath);
 }
 
 bool InMemoryFileSystem::FindByLowerPath(std::wstring const& lowerPath, FileInfo* info) const
@@ -133,4 +152,64 @@ void InMemoryFileSystem::CreateNewElement(PCWCHAR parentPath, FileInfo const& in
 	toInsert.Level = parent.Level + 1;
 
 	m_elements.insert(std::make_pair(lowerParentPath + L'\\' + toInsert.Name, toInsert));
+}
+
+#undef min
+
+int InMemoryFileSystem::ReadContent(PCWCHAR filePath, void* buffer, Offset offset, int size) const
+{
+	Content const& content = FindContentByPath(filePath);
+	if (offset > Offset(content.size()))
+	{
+		return 0;
+	}
+
+	int const sizeRead = std::min(size, int(content.size() - offset));
+	std::memcpy(buffer, &content.front() + offset, sizeRead);
+	return sizeRead;
+}
+
+void InMemoryFileSystem::WriteContent(PCWCHAR filePath, void const* buffer, Offset offset, int size)
+{
+	Content& content = FindContentByPath(filePath);
+	if (offset + size > Offset(content.size()))
+	{
+		content.resize(offset + size);
+	}
+
+	std::memcpy(&content.front() + offset, buffer, size);
+
+	FileInfo& file = FindByPath(filePath);
+	if (content.size() > file.Size)
+	{
+		file.Size = ULONG(content.size());
+	}
+}
+
+InMemoryFileSystem::Content const& InMemoryFileSystem::FindContentByPath(PCWCHAR filePath) const
+{
+	std::wstring lowerPath(filePath);
+	ToLower(lowerPath);
+
+	auto const it = m_contents.find(lowerPath);
+	if (it == m_contents.end())
+	{
+		throw std::runtime_error("File content not found");
+	}
+
+	return it->second;
+}
+
+InMemoryFileSystem::Content& InMemoryFileSystem::FindContentByPath(PCWCHAR filePath)
+{
+	std::wstring lowerPath(filePath);
+	ToLower(lowerPath);
+
+	auto it = m_contents.find(lowerPath);
+	if (it == m_contents.end())
+	{
+		it = m_contents.insert(std::make_pair(lowerPath, Content())).first;
+	}
+
+	return it->second;
 }

@@ -185,6 +185,7 @@
   <ItemGroup>
     <ClInclude Include="CallbackData.h" />
     <ClInclude Include="CommunicationPort.h" />
+    <ClInclude Include="DirectoryCache.h" />
     <ClInclude Include="FileSystemConverter.h" />
     <ClInclude Include="FileSystemStub.h" />
     <ClInclude Include="fltKernel.h" />

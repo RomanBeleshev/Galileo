@@ -2,6 +2,7 @@
 #include "CallbackData.h"
 #include "FileSystemConverter.h"
 #include "InMemoryFileSystem.h"
+#include "DirectoryCache.h"
 #include "IFileSystem.h"
 
 #include "fltKernel.h"
@@ -30,22 +31,98 @@ bool IsToPassBy(int majorCode, wchar_t const* path)
 	return false;
 }
 
-template <typename DirectoryInformation>
-NTSTATUS OnDirectoryControl(IFileInfoIterator& list, CallbackData const& callbackData, DirectoryInformation* buffer, int& size)
+class LimitedFileListIterator : public IFileInfoIterator
 {
-	ULONG const operationFlags = callbackData.OperationFlags();
-	if ((operationFlags & SL_RESTART_SCAN) || (operationFlags & SL_RETURN_SINGLE_ENTRY))
+public:
+	LimitedFileListIterator(IFileInfoIterator& list, int limit) :
+		m_list(list),
+		m_filesLeft(limit),
+		m_bookmark(0)
 	{
-		return FileSystemConverter::ConvertList(list, static_cast<DirectoryInformation *>(buffer), size);
+	}
+
+private:
+	virtual bool GetNext(FileInfo& value)
+	{
+		if (m_filesLeft > 0)
+		{
+			--m_filesLeft;
+			return m_list.GetNext(value);
+		}
+
+		return false;
+	}
+
+	virtual void SetBookmark()
+	{
+		m_list.SetBookmark();
+		m_bookmark = m_filesLeft;
+	}
+
+	virtual void RollbackToBookmark()
+	{
+		m_list.RollbackToBookmark();
+		m_filesLeft = m_bookmark;
+	}
+
+private:
+	IFileInfoIterator& m_list;
+	int m_filesLeft;
+	int m_bookmark;
+};
+
+static DirectoryCache<const void*> ListCache;
+
+template <typename DirectoryInformation>
+NTSTATUS OnDirectoryControl(IFileSystem& fileSystem, CallbackData const& callbackData, DirectoryInformation* buffer, int& size)
+{
+	std::wstring const& name = callbackData.FileName();
+	ULONG const operationFlags = callbackData.OperationFlags();
+
+	bool differentName;
+	bool const exists = ListCache.Exists(callbackData.FileObject(), name, differentName);
+
+	if (exists)
+	{
+		if (differentName)
+		{
+			ListCache.Remove(callbackData.FileObject());
+			ListCache.Add(callbackData.FileObject(), name, fileSystem.ListDirectory(name.c_str()));
+		}
+
+		if (operationFlags & SL_RESTART_SCAN)
+		{
+			ListCache.Remove(callbackData.FileObject());
+			ListCache.Add(callbackData.FileObject(), name, fileSystem.ListDirectory(name.c_str()));
+		}
 	}
 	else
 	{
-		size = 0;
-		return STATUS_NO_MORE_FILES;
+		ListCache.Add(callbackData.FileObject(), name, fileSystem.ListDirectory(name.c_str()));
 	}
+
+	NTSTATUS result = STATUS_SUCCESS;
+	IFileInfoIterator& list = ListCache.Get(callbackData.FileObject(), name);
+
+	if (operationFlags & SL_RETURN_SINGLE_ENTRY)
+	{
+		LimitedFileListIterator singleFile(list, 1);
+		result = FileSystemConverter::ConvertList(singleFile, static_cast<DirectoryInformation *>(buffer), size);
+	}
+	else
+	{
+		result = FileSystemConverter::ConvertList(list, static_cast<DirectoryInformation *>(buffer), size);
+	}
+
+	if (result == STATUS_NO_MORE_FILES)
+	{
+		ListCache.Remove(callbackData.FileObject());
+	}
+
+	return result;
 }
 
-NTSTATUS OnDirectoryControl(FileInfoIteratorPtr list, CallbackData const& callbackData, void* oBuffer, int& oSize)
+NTSTATUS OnDirectoryControl(IFileSystem& fileSystem, CallbackData const& callbackData, void* oBuffer, int& oSize)
 {
 	if (callbackData.MinorCode() != IRP_MN_QUERY_DIRECTORY)
 	{
@@ -55,17 +132,17 @@ NTSTATUS OnDirectoryControl(FileInfoIteratorPtr list, CallbackData const& callba
 	int const informationClass = callbackData.InformationClass();
 	if (informationClass == FileFullDirectoryInformation)
 	{
-		return OnDirectoryControl(*list, callbackData, PFILE_FULL_DIR_INFORMATION(oBuffer), oSize);
+		return OnDirectoryControl(fileSystem, callbackData, PFILE_FULL_DIR_INFORMATION(oBuffer), oSize);
 	}
 
 	if (informationClass == FileBothDirectoryInformation)
 	{
-		return OnDirectoryControl(*list, callbackData, PFILE_BOTH_DIR_INFORMATION(oBuffer), oSize);
+		return OnDirectoryControl(fileSystem, callbackData, PFILE_BOTH_DIR_INFORMATION(oBuffer), oSize);
 	}
 
 	if (informationClass == FileIdBothDirectoryInformation)
 	{
-		return OnDirectoryControl(*list, callbackData, PFILE_ID_BOTH_DIR_INFORMATION(oBuffer), oSize);
+		return OnDirectoryControl(fileSystem, callbackData, PFILE_ID_BOTH_DIR_INFORMATION(oBuffer), oSize);
 	}
 
 	return STATUS_INSUFFICIENT_RESOURCES;
@@ -116,7 +193,7 @@ NTSTATUS OnCreate(IFileSystem& fileSystem, CallbackData const& callbackData, ULO
 		::GetSystemTimeAsFileTime(&time);
 
 		bool const isDirectory = callbackData.CreateOptions() & FILE_DIRECTORY_FILE;
-		fileSystem.CreateNewElement(parent.c_str(), FileInfo(isDirectory, name, 0, time));
+		fileSystem.CreateNewElement(parent.c_str(), FileInfo(isDirectory, name, time));
 
 		information = FILE_CREATED;
 	}
@@ -160,6 +237,12 @@ NTSTATUS OnQueryInformation(FileInfo& fileInfo, CallbackData const& callbackData
 	return STATUS_INSUFFICIENT_RESOURCES;
 }
 
+NTSTATUS OnRead(IFileSystem& fileSystem, CallbackData const& callbackData, void* oBuffer, int& oSize)
+{
+	oSize = fileSystem.ReadContent(callbackData.FileName().c_str(), oBuffer, callbackData.Offset(), oSize);
+	return STATUS_SUCCESS;
+}
+
 void OperationsRoutine(IFileSystem& fileSystem, char const* iBuffer, int iSize, char* oBuffer, int& oSize)
 {
 	CallbackData const callbackData(iBuffer);
@@ -194,7 +277,7 @@ void OperationsRoutine(IFileSystem& fileSystem, char const* iBuffer, int iSize, 
 	void* callBackOutputBuffer = static_cast<void *>(oBuffer + sizeof(IO_STATUS_BLOCK));
 	if (majorCode == IRP_MJ_DIRECTORY_CONTROL)
 	{
-		status = OnDirectoryControl(fileSystem.ListDirectory(fileName), callbackData, callBackOutputBuffer, oSize);
+		status = OnDirectoryControl(fileSystem, callbackData, callBackOutputBuffer, oSize);
 		information = oSize;
 	}
 	else if (majorCode == IRP_MJ_CLOSE || majorCode == IRP_MJ_CLEANUP)
@@ -208,6 +291,11 @@ void OperationsRoutine(IFileSystem& fileSystem, char const* iBuffer, int iSize, 
 	else if (majorCode == IRP_MJ_QUERY_INFORMATION)
 	{
 		status = OnQueryInformation(fileInfo, callbackData, callBackOutputBuffer, oSize);
+	}
+	else if (majorCode == IRP_MJ_READ)
+	{
+		status = OnRead(fileSystem, callbackData, callBackOutputBuffer, oSize);
+		information = oSize;
 	}
 	else
 	{

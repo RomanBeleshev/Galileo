@@ -320,6 +320,23 @@ CONST FLT_OPERATION_REGISTRATION Callbacks[] = {
     { IRP_MJ_OPERATION_END }
 };
 
+
+const FLT_CONTEXT_REGISTRATION Contexts[] =
+{
+    { FLT_INSTANCE_CONTEXT,              //ContextType
+      0,                                 //Flags
+      NULL,								//ContextCleanupCallback
+      8,								//Size
+      777								//PoolTag
+    },
+    { FLT_FILE_CONTEXT,                  //ContextType
+      0,                                 //Flags
+      NULL,								//ContextCleanupCallback
+      8,								//Size
+      777								//PoolTag
+    },
+    { FLT_CONTEXT_END }
+};
 //
 //  This defines what we want to filter with FltMgr
 //
@@ -330,7 +347,7 @@ CONST FLT_REGISTRATION FilterRegistration = {
     FLT_REGISTRATION_VERSION,           //  Version
     0,                                  //  Flags
 
-    NULL,                               //  Context
+	Contexts,                               //  Context
     Callbacks,                          //  Operation callbacks
 
     GalileoFilterUnload,                           //  MiniFilterUnload

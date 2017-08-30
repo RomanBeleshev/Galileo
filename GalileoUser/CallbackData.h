@@ -3,6 +3,7 @@
 typedef struct _FLT_IO_PARAMETER_BLOCK FLT_IO_PARAMETER_BLOCK;
 
 #include <string>
+#include <cstdint>
 
 class CallbackData
 {
@@ -17,7 +18,9 @@ public:
 	int FileInformationClass() const;
 	int Disposition() const;
 	int CreateOptions() const;
+	std::int64_t Offset() const;
 	std::wstring const& FileName() const;
+	void const* FileObject() const;
 
 	void const* InputBuffer() const;
 	int InputBufferLength() const;
